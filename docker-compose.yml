@@ -1,0 +1,59 @@
+version: "2.1"
+ 
+services:
+
+  apache-for-fpm:
+    image: apache-scuttle:$VERSION_APACHE_FPM
+    build: "https://git.scimetis.net/yohan/docker-apache-for-fpm.git"
+    container_name: apache-piwigo
+    restart: always
+    networks:
+      - reverse-proxy
+      - php-fpm-piwigo
+    volumes:
+      - piwigo:/var/www/html:z
+      - /mnt/data/scimetis.net/home/www/piwigo/upload:/mnt/upload
+      - /mnt/data/scimetis.net/home/www/piwigo/galleries:/mnt/galleries
+      - /mnt/data/scimetis.net/home/www/piwigo/_data/i:/mnt/i
+      - ./fpm.conf:/etc/apache2/sites-available/fpm.conf
+    environment:
+      FPM_HOST: php-fpm-piwigo:9000
+      SERVER_NAME: piwigo.scimetis.net
+ 
+  php-fpm:
+    image: php-fpm-piwigo:$VERSION_PHP_FPM_PIWIGO
+    build:
+      context: "https://git.scimetis.net/yohan/docker-php-fpm-piwigo.git"
+    # requires docker v17
+    #  args:
+    #    - VERSION_PHP_FPM
+    container_name: php-fpm-piwigo
+    restart: always
+    networks:
+      - php-fpm-piwigo
+      - mysqlnet
+    volumes:
+      - piwigo:/var/www/html:z
+      - piwigo_php5-fpm_conf:/etc/php/7.3/fpm/pool.d:Z
+      - ./php.ini:/etc/php/7.3/fpm/php.ini
+      - /mnt/data/scimetis.net/home/www/piwigo/upload:/mnt/upload
+      - /mnt/data/scimetis.net/home/www/piwigo/galleries:/mnt/galleries
+      - /mnt/data/scimetis.net/home/www/piwigo/_data/i:/mnt/i
+ 
+networks:
+
+  reverse-proxy:
+    external: true
+
+  php-fpm-piwigo:
+
+  mysqlnet:
+    external: true
+
+volumes:
+
+  piwigo:
+    external: true
+
+  piwigo_php5-fpm_conf:
+    external: true
